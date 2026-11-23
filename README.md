@@ -178,6 +178,11 @@ runs/<时间戳>-<arch>/
 
 ## 4. 读报告
 
+> 想知道某个测试点具体考什么、阈值多少、凭什么给分？看
+> [`docs/`](docs/README.md)——赛题文档的原文副本，外加一张
+> “suite → 文档 → 评分方式 → 满分”的速查表。
+> 报告里看到 `basic-glibc / test_mount 0/5`，就去 `docs/basic/basic.md` 查那个点。
+
 以一次完整的 RISC-V 运行为例：
 
 ```text
@@ -424,6 +429,7 @@ starry-eval/
 │   └── points_table.py         # 把 report.json 摊平成全量测试点表（md + csv）
 ├── vendor/
 │   └── judge/                  # 官方 judge_*.py 原件副本（84 KB，见 NOTICE.md）
+├── docs/                       # 赛题测试点文档（上游原文副本，见 docs/README.md）
 ├── runs/                       # 每次运行的 serial.log + report.*（未入库）
 ├── tests/
 │   ├── test_parsers.py         # 解析器的合成数据单测
@@ -535,6 +541,7 @@ libcbench/unixbench 覆盖率、串口 group/incomplete/script marker。
 | `starry_eval.py`、`starry_eval/` | 工具本体，纯标准库 |
 | `scripts/points_table.py` | 全量测试点表导出 |
 | `vendor/judge/` | 官方 `judge_*.py` 原件副本，clone 即可评分（来源与 commit 见 `vendor/judge/NOTICE.md`） |
+| `docs/` | 赛题测试点文档原文副本（132 KB，说明每个测试点考什么、怎么算分，见 `docs/README.md`） |
 | `tests/`、`Makefile`、`.gitignore` | 单测 / 快捷入口 / 忽略规则 |
 | `README.md` | 本文件 |
 | `baseline.json` | 可选，见 12.3 |
