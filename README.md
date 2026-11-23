@@ -614,10 +614,10 @@ grep -rn "/home/\|/Users/" --include='*.py' --include='*.json' --include='*.md' 
 | 内容 | 体积 | 分发方式 |
 |---|---|---|
 | 本仓库（工具 + `vendor/judge/`） | ~400 KB | `git clone` |
-| `sdcard-rv.img` / `sdcard-la.img` | 4 GiB / 个 | GitHub **Release 附件**（仓库里放不下：单文件 100 MB 硬限） |
+| `sdcard-rv.img` / `sdcard-la.img` | 4 GiB / 个（xz 后 520 / 708 MiB） | 队内已分享（不进仓库：单文件 100 MB 硬限） |
 | `kernel-rv` / `kernel-la` | 4–5 MB | 队友自己 `make rv` / `make la`，不用你给 |
 
-### 13.1 镜像压缩与上传
+### 13.1 镜像压缩与分发
 
 xz 对 ext4 镜像压得很狠（实测 `xz -1 -T8`）：
 
@@ -631,68 +631,62 @@ xz -1 -T0 -k sdcard-rv.img     # 4.0 GiB -> 520 MiB (7.9x)，约 60-90 s
 xz -1 -T0 -k sdcard-la.img     # 4.0 GiB -> 708 MiB (5.8x)，约 90-120 s
 ```
 
-`xz -9` 能再小一点，但时间翻几倍；Release 单文件上限 2 GiB，`-1` 已经
-足够。上传（需要 GitHub CLI 已登录）：
-
-```bash
-gh release create images-v1 \
-    --title "official sdcard images (rv/la)" \
-    --notes "xz -1 压缩；解压后 sha256 见 13.3" \
-    sdcard-rv.img.xz sdcard-la.img.xz
-```
-
-不要塞进 git 本体：单文件 100 MB 硬限；LFS 免费额度只有 1 GB，两份镜像
-解压前就 1.1 GB，Release 附件更省事。校内网盘/对象存储同样可以，把链接
-写进 13.3 的表格即可。
+镜像**不进本仓库、也不挂在 Release 上**：单文件 100 MB 是 git 硬限，LFS 免费
+额度只有 1 GB 而两份镜像解压前就 1.1 GB。队内已经分享过下载链接，队友拿到
+`.xz` 后按下文解压、校验 sha256 即可（见 13.3）。
 
 ### 13.2 队友侧的四步
 
 ```bash
-# 1) 拿工具（judge 已内置，不用再 clone oskernel-testsuits-cooperation）
-git clone <your-repo> starry-eval
+# 1) 拿工具（judge 与 rv/la 内核都已内置，不用再 clone 任何东西）
+git clone https://github.com/zihaojf/oskernel-eval.git
+cd oskernel-eval
 
 # 2) 装 QEMU（Ubuntu 示例）
 sudo apt install -y qemu-system-misc
 
-# 3) 解压镜像到 StarryOS 根目录，名字必须是 sdcard-rv.img / sdcard-la.img
-cd StarryOS
-xz -dk ~/Downloads/sdcard-rv.img.xz
-xz -dk ~/Downloads/sdcard-la.img.xz
-sha256sum sdcard-*.img        # 与 13.3 的表对照
+# 3) 解压镜像到 images/（放 <starry-dir>/ 下也可以，见 14.2）
+mkdir -p images
+xz -dc ~/Downloads/sdcard-rv.img.xz > images/sdcard-rv.img
+xz -dc ~/Downloads/sdcard-la.img.xz > images/sdcard-la.img
+sha256sum images/*.img        # 与 13.3 的表对照
 
-# 4) 编内核 + 起 QEMU + 出报告
-cd ../starry-eval
-make rv                        # 等价于 run --arch rv；镜像缺了就 --build
-python3 starry_eval.py run --arch la
-make points                    # 全量测试点表
+# 4) 起 QEMU + 出报告
+make rv
+make la
+make points                   # 全量测试点表
 ```
 
-`starry-eval/` 与 `StarryOS/` 必须是**兄弟目录**（默认路径推导就是这个
-关系）。队友放在别处就加 `--starry-dir /path/to/StarryOS`。
+只要**跑分**的话到这一步就结束了：`kernels/kernel-rv` 是仓库里带的预编译
+内核，不需要 Rust 工具链，也不需要 OS 源码。
+
+要自己编内核/改 OS 时，再把 OS 仓库 clone 到**同级目录**（`StarryOS` 或
+`Oops-StarryOS` 都会被自动识别），然后 `python3 starry_eval.py run --build`。
 
 ### 13.3 分发清单（贴给队友）
 
 | 项 | 值 |
 |---|---|
 | 工具仓库 | `<your-repo>`（约 400 KB，含 `vendor/judge/`） |
-| `sdcard-rv.img` | Release 附件 `sdcard-rv.img.xz`（520 MiB），解压后 sha256 `259d16ab9f5a909f4a8d454d5704b1c3ee62224884f4714d06ce7bd0948bb831` |
-| `sdcard-la.img` | Release 附件 `sdcard-la.img.xz`（708 MiB），解压后 sha256 `1409a027fad80220c8e114fdfcff316c16f9dcd7772f1aff471d3f99d480dff6` |
+| `sdcard-rv.img` | 队内已分享的 `sdcard-rv.img.xz`（520 MiB），解压后 sha256 `259d16ab9f5a909f4a8d454d5704b1c3ee62224884f4714d06ce7bd0948bb831` |
+| `sdcard-la.img` | 队内已分享的 `sdcard-la.img.xz`（708 MiB），解压后 sha256 `1409a027fad80220c8e114fdfcff316c16f9dcd7772f1aff471d3f99d480dff6` |
 | Python | 3.10+（只用标准库） |
 | QEMU | `qemu-system-riscv64`、`qemu-system-loongarch64` |
 | 首次完整跑 | rv ≈ 6–9 分钟、la ≈ 3 分钟（QEMU TCG，视宿主而定） |
 
 ### 13.4 已验证的“队友环境”
 
-把 `StarryOS/` 里只留 `kernel-rv` + `sdcard-rv.img`（无 judge、无上游仓库），
-再放一份仅含本仓库的 clone 实测：
+从 GitHub clone 一份公开仓库（`--depth 1`）、只放一个镜像符号链接，没有任何
+OS 源码、没有上游 judge 仓库，实测：
 
 ```text
-$ python3 starry_eval.py run --arch rv --timeout 90
-judge dir : .../starry-eval/vendor/judge        # 自动回退到内置 judge
-official judge (verbatim): 354 / 852  (41.5%)   # 90 s 超时，只跑完 9/10 组
-local composite          : 480 / 1038 (46.2%)
-test points: 494 full, 1 partial, 140 fail, 0 skip
-groups: 9/10 complete                            # timed_out: True
+$ git clone --depth 1 git@github.com:zihaojf/oskernel-eval.git
+$ mkdir images && ln -s .../sdcard-rv.img images/
+$ python3 starry_eval.py run --arch rv --timeout 50
+ kernel | .../oskernel-eval/kernels/kernel-rv     # 仓库内预编译内核
+ image  | .../oskernel-eval/images/sdcard-rv.img
+ judge  | .../oskernel-eval/vendor/judge          # 内置官方 judge
+ official judge (verbatim): 65 / 852 (7.6%)       # 50 s 超时，只跑完部分组
 ```
 
 超时被杀也会正常写 `report.json` / `report.md` / `report.txt`，不会白跑。
@@ -775,7 +769,7 @@ message 带上 OS 的 commit id，方便对账）。队友 `git pull` 一次就�
 这样队友 `git pull` 评分器仓库 + 一份镜像就能直接 `make rv` 起 QEMU，
 **不需要 Rust 工具链、不需要 OS 源码**。代价是内核是二进制、看不出改动
 来源（commit message 里带 OS 的 commit id）；另外每次更新给仓库历史加
-约 8.7 MB，刷十几次就上百 MB——真嫌大就改用 Release 附件，或定期
+约 8.7 MB，刷十几次就上百 MB——真嫌大就只保留一个架构，或定期
 `git checkout --orphan` 压掉旧历史。
 
 注意：预编译内核对工具链版本敏感（`rust-toolchain.toml` 里的
@@ -814,8 +808,8 @@ make points            # 全量测试点表
 要改 OS 的人再 clone 一份 OS 仓库到**同级目录**，两个目录名都在识别范围
 里（`StarryOS` / `Oops-StarryOS`），不需要任何参数。
 
-> 仓库是 private 的话，队友需要被加成 collaborator，或用 PAT
-> （`https://<token>@github.com/...`）才能 clone；Release 附件同理。
+> 仓库现在是 public，队友直接 clone；若以后改回 private，需要把队友加成
+> collaborator，或用 PAT（`https://<token>@github.com/...`）才能 clone。
 
 ### 14.6 HTTPS 走代理、SSH 直连
 

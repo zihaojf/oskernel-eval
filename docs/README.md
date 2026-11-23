@@ -34,6 +34,12 @@
 | `cyclictest` | 实时性：调度延迟（含 hackbench 负载） | [cyclictest/cyclictest.md](cyclictest/cyclictest.md) | 4 | 本地 `scoring/cyclictest.py`：延迟阈值 + STRESS 作废规则 |
 | `ltp` | Linux 内核 syscall 兼容性（2822 个 case，通过率） | [ltp/ltp.md](ltp/ltp.md) | 动态 | 本地 `scoring/ltp.py`：PASS/FAIL/TCONF 通过率，不进 composite |
 
+`iozone` 和 `netperf` 在上游就没有独立文档（上游进度表里这两项的“题目描述”
+标的是 ❌），所以它们的评分规则只能看本地实现
+[`scoring/iozone.py`](../starry_eval/scoring/iozone.py) /
+[`scoring/network.py`](../starry_eval/scoring/network.py)，以及
+[`vendor/judge/judge_iozone.py`](../vendor/judge/judge_iozone.py)。
+
 `lmbench.md` 和 `lmbench/lmbench.md` 是**两份不同的文档**（不是重复）：
 前者是每个指标的预期区间（评分阈值就来自这里），后者讲 lmbench 是什么、
 怎么设计。查分数看前者，看原理看后者。
