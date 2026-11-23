@@ -749,21 +749,27 @@ git push edu main
 查找顺序固定：`--starry-dir` 指过去的那份 → `oskernel-eval/images/`。
 内核同理：`<starry-dir>/kernel-rv` → `oskernel-eval/kernels/kernel-rv`。
 
-### 14.3 想让“pull 评分器就拿到最新 OS 结果”，把内核提交进去
+### 14.3 kernels/ 已入库，改了 OS 这样更新
 
-`kernel-rv` 4.8 MB、`kernel-la` 3.9 MB，完全可以进 git。做法：
+`kernels/kernel-rv`（4.8 MB）和 `kernels/kernel-la`（3.9 MB）已经提交在本仓库
+里，当前对应 `Oops-StarryOS` 的 `331868a`。改了内核之后一条命令刷新：
 
 ```bash
-cd ~/starry-work/StarryOS && make rv la          # 编出最新内核
+cd ~/starry-work/StarryOS && make rv la         # 编出最新内核
 cd ~/starry-work/starry-eval
-mkdir -p kernels && cp ../StarryOS/kernel-rv ../StarryOS/kernel-la kernels/
-git add -f kernels/                              # 强制加入（无 .gitignore 阻挡）
-git commit -m "kernels: rv/la @ $(git -C ../StarryOS rev-parse --short HEAD)"
+./scripts/update-kernels.sh                     # 默认取 ../Oops-StarryOS
+./scripts/update-kernels.sh /path/to/StarryOS   # 或显式指定
+./scripts/update-kernels.sh --no-push           # 只本地提交
 ```
+
+脚本做三件事：把两个内核拷进 `kernels/`、打印 sha256、提交并推送（commit
+message 带上 OS 的 commit id，方便对账）。队友 `git pull` 一次就拿到新内核。
 
 这样队友 `git pull` 评分器仓库 + 一份镜像就能直接 `make rv` 起 QEMU，
 **不需要 Rust 工具链、不需要 OS 源码**。代价是内核是二进制、看不出改动
-来源；commit message 里带上 OS 的 commit id 就能对上。
+来源（commit message 里带 OS 的 commit id）；另外每次更新给仓库历史加
+约 8.7 MB，刷十几次就上百 MB——真嫌大就改用 Release 附件，或定期
+`git checkout --orphan` 压掉旧历史。
 
 注意：预编译内核对工具链版本敏感（`rust-toolchain.toml` 里的
 `nightly-2025-05-20`）。你构建机的 QEMU 版本也应和队友一致，否则
