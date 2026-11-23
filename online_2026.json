@@ -1,0 +1,59 @@
+{
+  "source": "在线评测结果（用户提供，2026-10-31）",
+  "note": "四个环境：glibc-la / glibc-rv / musl-la / musl-rv。- 表示在线未计分或未捕获。",
+  "total": 1255.1484936933084,
+  "environments": {
+    "glibc-la": {
+      "basic": 92.0,
+      "busybox": 53.0,
+      "cyclictest": 0.0,
+      "iozone": 0.0,
+      "iperf": 6.0,
+      "libcbench": 32.20199856942625,
+      "libctest": null,
+      "lmbench": 0.0,
+      "ltp": 0.0,
+      "lua": 9.0,
+      "netperf": 5.657534246575342
+    },
+    "glibc-rv": {
+      "basic": 92.0,
+      "busybox": 53.0,
+      "cyclictest": 0.0,
+      "iozone": 20.761988615851664,
+      "iperf": 6.0,
+      "libcbench": 29.23388270265519,
+      "libctest": null,
+      "lmbench": 0.0,
+      "ltp": 0.0,
+      "lua": 9.0,
+      "netperf": 5.478672985781991
+    },
+    "musl-la": {
+      "basic": 92.0,
+      "busybox": 53.0,
+      "cyclictest": 0.0,
+      "iozone": 0.0,
+      "iperf": 6.0,
+      "libcbench": 29.427392354756737,
+      "libctest": 217.0,
+      "lmbench": 0.0,
+      "ltp": 0.0,
+      "lua": 9.0,
+      "netperf": 5.713899292550978
+    },
+    "musl-rv": {
+      "basic": 92.0,
+      "busybox": 53.0,
+      "cyclictest": 0.0,
+      "iozone": 20.0,
+      "iperf": 6.0,
+      "libcbench": 27.0,
+      "libctest": 217.0,
+      "lmbench": 0.0,
+      "ltp": 0.0,
+      "lua": 9.0,
+      "netperf": 5.67312492571021
+    }
+  }
+}
