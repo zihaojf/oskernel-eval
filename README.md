@@ -711,37 +711,31 @@ team/
     └── scripts/points_table.py
 ```
 
-### 14.1 别把 OS 仓库的 origin 换掉
-
-你的 `Oops-StarryOS` 工作副本当前是：
+### 14.1 remote 布局：origin = GitHub，赛题仓库叫 `edu`
 
 ```text
-origin    https://gitlab.eduxiji.net/T2026104869912739/oskernel2026-oops   # 赛题提交仓库
-upstream  https://github.com/Starry-OS/StarryOS.git                       # 上游
+origin    git@github.com:zihaojf/Oops-StarryOS.git              # 日常协作，默认
+edu       https://gitlab.eduxiji.net/T2026104869912739/oskernel2026-oops   # 提交赛题
+upstream  https://github.com/Starry-OS/StarryOS.git              # 上游
 ```
 
-**保持 origin 不动**，另加一个 remote 推到 GitHub：
+- 日常 `git push` / `git pull` 不需要写 remote 名，默认真的是 GitHub；
+- 提交赛题时才显式推 `edu`：
 
 ```bash
-cd ~/starry-work/StarryOS
-git remote add github https://github.com/zihaojf/Oops-StarryOS.git
-git push github main
+git fetch edu && git log --oneline edu/main -3    # 先看看落后没有
+git push edu main
 ```
 
-把 `origin` 改成 GitHub 会直接断掉赛题提交流程，这是这套双仓库方案里唯一
-不能碰的东西。
+首次推送实测数据：
 
-推送体积（实测）：已跟踪文件 11 667 个 / **155 MB**，最大的单文件 2.0 MB
-（`vendor/x86-0.52.0/x86data/.../cascadelakex_core_v1.04.json`），没有超过
-GitHub 100 MB 单文件限制的文件；`target/`（1.6 GB）、`*.img`、`kernel-rv`、
-`kernel-la`、`.cargo` 都已在 `.gitignore` 里。首次 `push` 会带上历史
-（`.git` 1.4 GB），之后都是增量。只想给队友一份代码、不要历史：
-
-```bash
-git checkout --orphan snapshot
-git add -A && git commit -m "Oops-StarryOS snapshot"
-git push github snapshot:main
-```
+| 项 | 值 |
+|---|---|
+| 清理前 `.git` | 1.4 GB（其中 1.16 GB 是 `tmp_obj_*` 残留垃圾） |
+| `git gc --prune=now` 后 | **32 MB**（单 pack 29.59 MiB） |
+| 跟踪文件 | 11 667 个 / 155 MB |
+| 历史最大单文件 | `asm.txt` 35.5 MB（无 100 MB 上限问题） |
+| 推送方式 | SSH（HTTPS 走 7897 代理时 TLS 握手会失败，见 14.6） |
 
 ### 14.2 队友要的东西：镜像放哪都行
 
@@ -809,3 +803,20 @@ make points            # 全量测试点表
 
 > 仓库是 private 的话，队友需要被加成 collaborator，或用 PAT
 > （`https://<token>@github.com/...`）才能 clone；Release 附件同理。
+
+### 14.6 HTTPS 走代理、SSH 直连
+
+本机环境变量里有 `https_proxy=http://127.0.0.1:7897`，实测 `curl https://github.com`
+会报 `TLS connect error: unexpected eof while reading`（`api.github.com`、
+`codeload.github.com` 却正常）。git 走 HTTPS 时同样会握手失败：
+
+```text
+fatal: unable to access 'https://github.com/...': GnuTLS, handshake failed
+```
+
+所以 OS 仓库和本仓库都用 **SSH URL**（`git@github.com:...`）：本机
+`~/.ssh/id_ed25519` 已注册到 GitHub，`ssh -T git@github.com` 直接返回
+`Hi zihaojf! You've successfully authenticated`，不经过代理、不用 PAT。
+
+队友那边如果只能走 HTTPS，则要么让他们关掉代理直连，要么用 PAT：
+`git clone https://<token>@github.com/zihaojf/oskernel-eval.git`。
