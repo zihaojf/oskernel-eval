@@ -12,6 +12,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass, field
@@ -71,6 +72,22 @@ def check_environment(arch: str, kernel: Path, image: Path) -> None:
         raise RunnerError(f"disk image not found: {image}")
 
 
+def _live_enabled(default: bool = True) -> bool:
+    """Mirror the serial stream to the terminal while QEMU runs.
+
+    On by default so ``make all`` shows the guest boot in real time.  Set
+    ``STARRY_EVAL_LIVE=0`` to silence it (the full log is still written to
+    ``serial.log`` in either case).
+    """
+
+    value = os.environ.get("STARRY_EVAL_LIVE", "").strip().lower()
+    if value in ("0", "false", "no", "off"):
+        return False
+    if value in ("1", "true", "yes", "on"):
+        return True
+    return default
+
+
 def run_qemu(
     arch: str,
     kernel: Path,
@@ -83,9 +100,15 @@ def run_qemu(
     smp: int = 1,
     extra_args: list[str] | None = None,
     verbose: bool = False,
+    live: bool = True,
 ) -> RunOutput:
-    """Boot ``kernel`` with ``image`` and return everything that was printed."""
+    """Boot ``kernel`` with ``image`` and return everything that was printed.
 
+    ``live`` echoes every serial line to stderr as it arrives, so a run started
+    with ``make all`` (or the CLI) is observable while it is still running.
+    """
+
+    live = _live_enabled(live)
     check_environment(arch, kernel, image)
     command = qemu_command(
         arch,
@@ -113,6 +136,11 @@ def run_qemu(
     with log_path.open("w", encoding="utf-8", errors="replace") as log_file:
         if verbose:
             print("+ " + " ".join(command))
+        print(
+            f"==> serial log: {log_path}  (live: {'on' if live else 'off'}, "
+            "STARRY_EVAL_LIVE=0 silences)",
+            flush=True,
+        )
         proc = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -140,6 +168,15 @@ def run_qemu(
                     log_file.flush()
                 except (BrokenPipeError, ValueError):
                     pass
+
+                if live:
+                    # stderr: keeps the report on stdout clean and stays
+                    # visible even when stdout is redirected to a file.
+                    try:
+                        sys.stderr.write(raw_line)
+                        sys.stderr.flush()
+                    except (BrokenPipeError, ValueError):
+                        pass
 
                 stripped = raw_line.strip()
                 run = SCRIPT_RUN_RE.match(stripped)

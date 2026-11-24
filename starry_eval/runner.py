@@ -28,7 +28,9 @@ class BuildError(RuntimeError):
 
 def build_kernel(arch: str, starry_dir: Path) -> None:
     spec = ARCH_SPECS[arch]
-    print(f"==> building {spec.kernel_name} (make {spec.build_target})")
+    # flush: the make output below writes straight to fd 1, so an unflushed
+    # banner would show up *after* the build when stdout is a pipe or a file.
+    print(f"==> {starry_dir}  make {spec.build_target}  ({spec.kernel_name})", flush=True)
     proc = subprocess.run(
         ["make", "-C", str(starry_dir), spec.build_target],
         text=True,

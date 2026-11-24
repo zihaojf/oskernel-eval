@@ -27,7 +27,7 @@ from .online import (
 from .qemu import RunnerError
 from .references import OFFICIAL_SUITES, SUITE_ORDER, SUITE_SPECS
 from .report import render_markdown, render_text
-from .runner import BuildError, run_one, score_one
+from .runner import BuildError, build_kernel, run_one, score_one
 
 
 def _add_common(parser: argparse.ArgumentParser) -> None:
@@ -170,6 +170,25 @@ def _infer_arch(text: str, explicit: str | None) -> str:
     if "loongarch64" in lowered or "loongarch" in lowered:
         return "la"
     return "rv"
+
+
+def cmd_build(args: argparse.Namespace) -> int:
+    """Build kernel-rv / kernel-la from the OS checkout, without booting."""
+
+    paths = default_paths(
+        starry_dir=args.starry_dir,
+        runs_dir=args.runs_dir,
+        baseline_file=args.baseline,
+    )
+    archs = list(ARCH_ORDER) if args.arch == "all" else [args.arch]
+    print(f"==> OS tree    : {paths.starry_dir}")
+    for arch in archs:
+        build_kernel(arch, paths.starry_dir)
+    for arch in archs:
+        kernel = paths.kernel(arch)
+        state = "ok" if kernel.is_file() else "MISSING"
+        print(f"==> {arch:<3} kernel : {kernel}  ({state})")
+    return 0
 
 
 def cmd_score(args: argparse.Namespace) -> int:
@@ -344,6 +363,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="exit 1 on timeout, no groups, or incomplete groups",
     )
     run.set_defaults(func=cmd_run)
+
+    build = sub.add_parser(
+        "build",
+        help="build kernel-rv / kernel-la from the OS checkout (no QEMU boot)",
+    )
+    _add_common(build)
+    build.add_argument("--arch", choices=(*ARCH_ORDER, "all"), default="all")
+    build.set_defaults(func=cmd_build)
 
     score = sub.add_parser("score", help="score one or more saved serial logs")
     _add_common(score)
