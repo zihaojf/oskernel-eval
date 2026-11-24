@@ -48,7 +48,7 @@ def score_ltp(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=0.0,
                 status=STATUS_SKIP,
                 kind="functional",
-                note="TCONF (not counted)",
+                note="TCONF（不计分）",
             )
         else:
             ok = outcome == "pass"
@@ -58,7 +58,7 @@ def score_ltp(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=1.0,
                 status=STATUS_FULL if ok else STATUS_FAIL,
                 kind="functional",
-                note=f"exit={ret}",
+                note=f"退出码={ret}",
             )
         points.append(point)
 
@@ -88,6 +88,6 @@ def score_ltp(group: GroupResult, baseline: dict[str, float]) -> None:
         finish(current_name, "\n".join(buffer), -1)
 
     if matches == 0:
-        group.warnings.append("ltp: no 'RUN LTP CASE' lines found")
+        group.warnings.append("ltp：没有找到 'RUN LTP CASE' 行")
 
     group.points.extend(points)

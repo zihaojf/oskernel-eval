@@ -76,7 +76,7 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
 def _paths_from_args(args: argparse.Namespace):
     judge_dir = Path(args.judge_dir) if args.judge_dir else None
     if judge_dir is not None and not judge_dir.is_dir():
-        raise RunnerError(f"judge directory not found: {judge_dir}")
+        raise RunnerError(f"找不到 judge 目录：{judge_dir}")
     paths = default_paths(
         starry_dir=args.starry_dir,
         judge_dir=judge_dir,
@@ -85,13 +85,12 @@ def _paths_from_args(args: argparse.Namespace):
     )
     if not paths.judge_dir.is_dir() and not args.allow_missing_judges:
         raise RunnerError(
-            f"official judge directory not found: {paths.judge_dir}\n"
-            "pass --judge-dir, or --allow-missing-judges to score without it"
+            f"找不到官方 judge 目录：{paths.judge_dir}\n"
+            "请用 --judge-dir 指定，或加 --allow-missing-judges 在无 judge 的情况下打分"
         )
     if not paths.judge_dir.is_dir():
         print(
-            f"warning: judge directory not found ({paths.judge_dir}); "
-            "official suites will not be scored",
+            f"警告：找不到 judge 目录（{paths.judge_dir}），官方套件不会被打分",
             file=sys.stderr,
         )
     return paths
@@ -105,7 +104,7 @@ def _print_report(report: dict, fmt: str) -> None:
     elif fmt == "json":
         print(json.dumps(report, indent=2, ensure_ascii=False))
     elif fmt == "none":
-        print(f"report: {Path(report['run_dir']) / REPORT_JSON}")
+        print(f"报告：{Path(report['run_dir']) / REPORT_JSON}")
 
 
 def _strict_ok(report: dict) -> bool:
@@ -146,14 +145,14 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if len(reports) > 1:
         print("=" * 78)
-        print("Combined summary")
+        print("两架构合计")
         print("=" * 78)
         for arch, report, run_dir in reports:
             summary = report["summary"]
             official = summary["official"]
             print(
-                f"{arch:<3} official {official['score']:>9.2f}/{official['max_score']:<9.2f}"
-                f"  composite {summary['composite']['score']:>9.2f}/"
+                f"{arch:<3} 官方 {official['score']:>9.2f}/{official['max_score']:<9.2f}"
+                f"  综合 {summary['composite']['score']:>9.2f}/"
                 f"{summary['composite']['max_score']:<9.2f}  {run_dir.name}"
             )
         print()
@@ -181,13 +180,13 @@ def cmd_build(args: argparse.Namespace) -> int:
         baseline_file=args.baseline,
     )
     archs = list(ARCH_ORDER) if args.arch == "all" else [args.arch]
-    print(f"==> OS tree    : {paths.starry_dir}")
+    print(f"==> OS 目录  ：{paths.starry_dir}")
     for arch in archs:
         build_kernel(arch, paths.starry_dir)
     for arch in archs:
         kernel = paths.kernel(arch)
-        state = "ok" if kernel.is_file() else "MISSING"
-        print(f"==> {arch:<3} kernel : {kernel}  ({state})")
+        state = "就绪" if kernel.is_file() else "缺失"
+        print(f"==> {arch:<3} 内核：{kernel}  （{state}）")
     return 0
 
 
@@ -199,10 +198,10 @@ def cmd_score(args: argparse.Namespace) -> int:
     for log_name in args.log:
         log_path = Path(log_name)
         if not log_path.is_file():
-            raise RunnerError(f"log file not found: {log_path}")
+            raise RunnerError(f"找不到日志文件：{log_path}")
         text = log_path.read_text(encoding="utf-8", errors="replace")
         arch = _infer_arch(text, args.arch)
-        label = args.label or f"{ARCH_SPECS[arch].label} from {log_path.name}"
+        label = args.label or f"来自 {log_path.name} 的 {ARCH_SPECS[arch].label}"
         report, run_dir = score_one(
             arch,
             label,
@@ -249,7 +248,7 @@ def cmd_compare_online(args: argparse.Namespace) -> int:
     store = RunStore(paths.runs_dir)
     online_path = Path(args.online) if args.online else DEFAULT_ONLINE_REFERENCE
     if not online_path.is_file():
-        raise RunnerError(f"online reference not found: {online_path}")
+        raise RunnerError(f"找不到线上参考文件：{online_path}")
     online_ref = load_online_reference(online_path)
 
     report_paths: dict[str, Path] = {}
@@ -260,8 +259,8 @@ def cmd_compare_online(args: argparse.Namespace) -> int:
             path = _latest_complete_report(store, arch)
         if path is None or not path.is_file():
             raise RunnerError(
-                f"no complete local report for {arch}; pass --{arch} <report.json> "
-                "or run the scorer first"
+                f"没有 {arch} 的完整本地报告：请用 --{arch} <report.json> 指定，"
+                "或先跑一次评分"
             )
         report_paths[arch] = path
 
@@ -288,15 +287,15 @@ def cmd_suites(args: argparse.Namespace) -> int:
         baseline_file=args.baseline,
     )
     print(
-        f"{'suite':<12} {'mode':<10} {'kind':<12} {'max':>6}  {'official judge':<14} title"
+        f"{'套件':<12} {'方式':<10} {'类型':<12} {'满分':>6}  {'官方 judge':<14} 说明"
     )
     print("-" * 90)
     for name in SUITE_ORDER:
         spec = SUITE_SPECS[name]
         judge = (
-            "yes"
+            "有"
             if name in OFFICIAL_SUITES and (paths.judge_dir / f"judge_{name}.py").is_file()
-            else "no"
+            else "无"
         )
         max_text = "-" if spec.default_max is None else str(int(spec.default_max))
         print(
@@ -304,10 +303,10 @@ def cmd_suites(args: argparse.Namespace) -> int:
             f"{judge:<14} {spec.title}"
         )
     print()
-    print(f"judge dir : {paths.judge_dir}")
-    print(f"starry dir: {paths.starry_dir}")
-    print(f"runs dir  : {paths.runs_dir}")
-    print(f"baseline  : {paths.baseline_file}")
+    print(f"judge 目录：{paths.judge_dir}")
+    print(f"OS 目录   ：{paths.starry_dir}")
+    print(f"运行目录  ：{paths.runs_dir}")
+    print(f"基线文件  ：{paths.baseline_file}")
     return 0
 
 
@@ -322,9 +321,9 @@ def cmd_baseline(args: argparse.Namespace) -> int:
     )
     data = load_baseline(paths.baseline_file)
     if not data:
-        print(f"no baseline at {paths.baseline_file}")
+        print(f"没有基线文件：{paths.baseline_file}")
         return 0
-    print(f"baseline: {paths.baseline_file} ({len(data)} metrics)")
+    print(f"基线：{paths.baseline_file}（{len(data)} 项指标）")
     for key in sorted(data):
         print(f"  {key:<72} {data[key]:g}")
     return 0
@@ -422,8 +421,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return int(args.func(args))
     except (RunnerError, BuildError) as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        print(f"错误：{exc}", file=sys.stderr)
         return 2
     except KeyboardInterrupt:
-        print("interrupted", file=sys.stderr)
+        print("已中断", file=sys.stderr)
         return 130

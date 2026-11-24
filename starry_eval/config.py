@@ -228,7 +228,7 @@ def qemu_command(
             "base=utc",
         ]
     else:
-        raise ValueError(f"unknown architecture: {arch!r}")
+        raise ValueError(f"未知架构：{arch!r}")
 
     if snapshot:
         command.append("-snapshot")

@@ -140,13 +140,13 @@ def score_iperf(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=1.0,
                 status=STATUS_FULL if ok else STATUS_FAIL,
                 kind="mixed",
-                note=f"end: {status or 'missing'}",
+                note=f"结束状态：{status or '缺失'}",
             )
         )
         if not complete:
-            group.warnings.append(f"iperf {name}: section has no end marker")
+            group.warnings.append(f"iperf {name}：段落没有结束标记")
         if not ok:
-            group.warnings.append(f"iperf {name}: reported {status or 'incomplete'}")
+            group.warnings.append(f"iperf {name}：上报状态 {status or '不完整'}")
 
         _parse_iperf_traffic(text, name, group.metrics, baseline)
         loss = next(
@@ -154,16 +154,15 @@ def score_iperf(group: GroupResult, baseline: dict[str, float]) -> None:
         )
         if loss is not None and loss.value > UDP_LOSS_WARN_PCT:
             group.warnings.append(
-                f"iperf {name}: {loss.value:.1f}% UDP loss "
-                f"(sender data is not reaching the guest)"
+                f"iperf {name}：UDP 丢包 {loss.value:.1f}%"
+                f"（发送端数据没能到达 guest）"
             )
         retrans = next(
             (m for m in group.metrics if m.name == f"iperf/{name} tcp_retrans"), None
         )
         if retrans is not None and retrans.value > TCP_RETRANS_WARN:
             group.warnings.append(
-                f"iperf {name}: suspicious TCP retransmit counter "
-                f"{retrans.value:.0f}"
+                f"iperf {name}：TCP 重传计数异常（{retrans.value:.0f}）"
             )
 
     missing = [name for name in IPERF_CASES if name not in seen]
@@ -175,7 +174,7 @@ def score_iperf(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=float(len(missing)),
                 status=STATUS_FAIL,
                 kind="mixed",
-                note="missing: " + ", ".join(missing),
+                note="缺少：" + "、".join(missing),
             )
         )
 
@@ -299,13 +298,13 @@ def score_netperf(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=1.0,
                 status=STATUS_FULL if ok else STATUS_FAIL,
                 kind="mixed",
-                note=f"end: {status or 'missing'}",
+                note=f"结束状态：{status or '缺失'}",
             )
         )
         if not complete:
-            group.warnings.append(f"netperf {name}: section has no end marker")
+            group.warnings.append(f"netperf {name}：段落没有结束标记")
         if not ok:
-            group.warnings.append(f"netperf {name}: reported {status or 'incomplete'}")
+            group.warnings.append(f"netperf {name}：上报状态 {status or '不完整'}")
 
         _parse_netperf_traffic(text, name, group.metrics, baseline)
         if name == "UDP_STREAM":
@@ -314,14 +313,14 @@ def score_netperf(group: GroupResult, baseline: dict[str, float]) -> None:
             receiver = values.get("netperf/UDP_STREAM receiver")
             if sender and receiver is not None and receiver < sender * 0.5:
                 group.warnings.append(
-                    f"netperf UDP_STREAM: receiver throughput is "
-                    f"{receiver / sender * 100:.1f}% of sender"
+                    f"netperf UDP_STREAM：接收端吞吐只有发送端的 "
+                    f"{receiver / sender * 100:.1f}%"
                 )
 
     if "so_dontroute" in group.body or "enable_enobufs" in group.body:
         group.warnings.append(
-            "netperf setsockopt(SO_DONTROUTE/SO_ENOBUFS) is not supported; "
-            "the test still runs but the setup is degraded"
+            "netperf 不支持 setsockopt(SO_DONTROUTE/SO_ENOBUFS)；"
+            "测试还能跑，但这个环境是降级的"
         )
 
     missing = [name for name in NETPERF_CASES if name not in seen]
@@ -333,7 +332,7 @@ def score_netperf(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=float(len(missing)),
                 status=STATUS_FAIL,
                 kind="mixed",
-                note="missing: " + ", ".join(missing),
+                note="缺少：" + "、".join(missing),
             )
         )
 

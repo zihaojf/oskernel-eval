@@ -47,7 +47,7 @@ def score_iozone_fallback(group: GroupResult, baseline: dict[str, float]) -> Non
                 max_score=1.0,
                 status=STATUS_FULL,
                 kind="performance",
-                note=f"{value:g} kB/sec (coverage only)",
+                note=f"{value:g} kB/sec（只算覆盖分）",
                 extra={"value": value},
             )
         )
@@ -69,8 +69,8 @@ def score_iozone_fallback(group: GroupResult, baseline: dict[str, float]) -> Non
                 max_score=1.0,
                 status=STATUS_FAIL,
                 kind="performance",
-                note="no iozone throughput rows parsed",
+                note="没有解析到 iozone 吞吐行",
             )
         )
-        group.warnings.append("iozone fallback: no throughput rows parsed")
+        group.warnings.append("iozone 兜底解析：没有解析到吞吐行")
     group.points.extend(points)

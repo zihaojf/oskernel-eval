@@ -75,13 +75,13 @@ def score_cyclictest(group: GroupResult, baseline: dict[str, float]) -> None:
             state = STATUS_FAIL
             score = 0.0
 
-        note = f"end: {status or 'missing'}"
+        note = f"结束状态：{status or '缺失'}"
         if ok and not has_data:
-            note += ", no latency samples"
+            note += "，没有延迟采样"
         elif max_latency is not None:
             note += (
-                f", max latency {max_latency} us "
-                f"(score threshold {CYCLIC_SCORE_MAX_US:g} us)"
+                f"，最大延迟 {max_latency} us"
+                f"（计分阈值 {CYCLIC_SCORE_MAX_US:g} us）"
             )
         points.append(
             TestPoint(
@@ -96,13 +96,13 @@ def score_cyclictest(group: GroupResult, baseline: dict[str, float]) -> None:
         )
 
         if not complete:
-            group.warnings.append(f"cyclictest {name}: section has no end marker")
+            group.warnings.append(f"cyclictest {name}：段落没有结束标记")
         if not ok:
-            group.warnings.append(f"cyclictest {name}: reported {status or 'incomplete'}")
+            group.warnings.append(f"cyclictest {name}：上报状态 {status or '不完整'}")
         if ok and not has_data:
             group.warnings.append(
-                f"cyclictest {name}: success but no T: latency line "
-                "(stress load did not really run)"
+                f"cyclictest {name}：状态是 success，但没有 T: 延迟行"
+                "（压力负载其实没跑起来）"
             )
 
         if threads and max_latency is not None:
@@ -116,7 +116,7 @@ def score_cyclictest(group: GroupResult, baseline: dict[str, float]) -> None:
                 range_low=0.0,
                 range_high=CYCLIC_MAX_BAD_US,
                 baseline=baseline.get(f"cyclictest/{name} max_latency"),
-                note="max over test threads",
+                note="取所有测试线程的最大值",
             )
             add_metric(
                 group.metrics,
@@ -130,13 +130,13 @@ def score_cyclictest(group: GroupResult, baseline: dict[str, float]) -> None:
             )
             if max_latency >= CYCLIC_MAX_BAD_US:
                 group.warnings.append(
-                    f"cyclictest {name}: max latency {max_latency} us is very high "
-                    f"(run score 0, threshold {CYCLIC_SCORE_MAX_US:g} us)"
+                    f"cyclictest {name}：最大延迟 {max_latency} us 过高"
+                    f"（本次得 0 分，阈值 {CYCLIC_SCORE_MAX_US:g} us）"
                 )
             elif max_latency >= CYCLIC_MAX_WARN_US:
                 group.warnings.append(
-                    f"cyclictest {name}: max latency {max_latency} us is high "
-                    f"(run score 0, threshold {CYCLIC_SCORE_MAX_US:g} us)"
+                    f"cyclictest {name}：最大延迟 {max_latency} us 偏高"
+                    f"（本次得 0 分，阈值 {CYCLIC_SCORE_MAX_US:g} us）"
                 )
 
     for line in group.body.splitlines():
@@ -149,23 +149,23 @@ def score_cyclictest(group: GroupResult, baseline: dict[str, float]) -> None:
             if point.name.startswith("STRESS"):
                 point.score = 0.0
                 point.status = STATUS_FAIL
-                point.note += "; discarded because hackbench was not killed cleanly"
+                point.note += "；因 hackbench 没有被干净地杀掉而作废"
         group.warnings.append(
-            "cyclictest: STRESS results discarded (kill hackbench was not successful)"
+            "cyclictest：STRESS 结果作废（kill hackbench 没有成功）"
         )
 
     if "sleep: not found" in group.body:
         group.warnings.append(
-            "cyclictest: the test script's 'sleep 1' failed; stress timing is off"
+            "cyclictest：测试脚本里的 'sleep 1' 失败，压力测试的计时不准"
         )
     if "fork() (error" in group.body:
         group.warnings.append(
-            "cyclictest: hackbench fork() failed; the STRESS runs are not loaded"
+            "cyclictest：hackbench 的 fork() 失败，STRESS 用例没有加上负载"
         )
     if "High resolution timers not available" in group.body:
-        group.warnings.append("cyclictest: high-resolution timers not available")
+        group.warnings.append("cyclictest：没有高精度定时器")
     if "No measurements available" in group.body:
-        group.warnings.append("cyclictest: hackbench reported no measurements")
+        group.warnings.append("cyclictest：hackbench 没有上报任何测量值")
 
     missing = [name for name in CYCLICTEST_CASES if name not in seen]
     if missing:
@@ -176,7 +176,7 @@ def score_cyclictest(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=float(len(missing)),
                 status=STATUS_FAIL,
                 kind="mixed",
-                note="missing: " + ", ".join(missing),
+                note="缺少：" + "、".join(missing),
             )
         )
 

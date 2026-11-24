@@ -57,16 +57,16 @@ def score_group(
                 group.alternate_score = official.alternate_score
                 group.alternate_max = official.alternate_max
                 group.alternate_label = (
-                    "official judge, newline-normalized"
+                    "官方 judge（修正换行）"
                     if official.source == "official-raw"
-                    else "official judge, verbatim"
+                    else "官方 judge（逐字）"
                 )
             for warning in official.warnings:
                 if warning not in group.warnings:
                     group.warnings.append(warning)
             return group
         except JudgeError as exc:
-            group.warnings.append(f"official judge failed: {exc}")
+            group.warnings.append(f"官方 judge 执行失败：{exc}")
 
     parser = LOCAL_PARSERS.get(suite)
     if parser is not None:
@@ -76,7 +76,7 @@ def score_group(
 
     spec = SUITE_SPECS.get(suite)
     hint = f" ({spec.title})" if spec else ""
-    group.warnings.append(f"no scorer for suite {suite!r}{hint}")
+    group.warnings.append(f"套件 {suite!r} 没有可用的评分器{hint}")
     if spec is not None and spec.default_max:
         group.points.append(
             TestPoint(
@@ -85,7 +85,7 @@ def score_group(
                 max_score=float(spec.default_max),
                 status=STATUS_FAIL,
                 kind=spec.kind,
-                note="suite was run but no judge could score it",
+                note="套件已经运行，但没有评分器能给它打分",
             )
         )
     return group

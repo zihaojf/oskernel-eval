@@ -40,15 +40,15 @@ def compare_reports(
 ) -> str:
     lines: list[str] = []
     lines.append("=" * 78)
-    lines.append("Report comparison")
+    lines.append("报告对比")
     lines.append("=" * 78)
-    lines.append(f"old: {old.get('run_dir') or old.get('started_at')}")
-    lines.append(f"new: {new.get('run_dir') or new.get('started_at')}")
+    lines.append(f"旧：{old.get('run_dir') or old.get('started_at')}")
+    lines.append(f"新：{new.get('run_dir') or new.get('started_at')}")
     lines.append("")
 
     old_summary = old.get("summary", {})
     new_summary = new.get("summary", {})
-    for label, key in (("official", "official"), ("composite", "composite")):
+    for label, key in (("官方 judge", "official"), ("本地综合分", "composite")):
         before = old_summary.get(key, {})
         after = new_summary.get(key, {})
         delta = float(after.get("score", 0)) - float(before.get("score", 0))
@@ -60,9 +60,9 @@ def compare_reports(
 
     before_suites = _suite_map(old)
     after_suites = _suite_map(new)
-    lines.append("Suite deltas")
+    lines.append("套件得分变化")
     lines.append("-" * 78)
-    lines.append(f"{'suite':<28} {'old':>10} {'new':>10} {'delta':>10}")
+    lines.append(f"{'套件':<28} {'旧':>10} {'新':>10} {'变化':>10}")
     for key in sorted(
         set(before_suites) | set(after_suites),
         key=lambda item: (
@@ -95,7 +95,7 @@ def compare_reports(
         changes.append(((after - before) / before * 100.0, key, before, after))
     changes.sort(key=lambda item: abs(item[0]), reverse=True)
     if changes:
-        lines.append(f"Largest metric changes (top {limit_metrics})")
+        lines.append(f"变化最大的指标（前 {limit_metrics} 项）")
         lines.append("-" * 78)
         for pct, key, before, after in changes[:limit_metrics]:
             lines.append(

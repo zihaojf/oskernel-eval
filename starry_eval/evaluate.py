@@ -68,9 +68,9 @@ def _script_without_group(
         status=STATUS_FAIL if max_score else STATUS_SKIP,
         kind=SUITE_SPECS.get(suite).kind if suite in SUITE_SPECS else "functional",
         note=(
-            "test script ran"
-            + (f" (status {status})" if status is not None else "")
-            + " but printed no OS COMP TEST GROUP marker"
+            "测试脚本运行了"
+            + (f"（退出码 {status}）" if status is not None else "")
+            + "，但没有打印 OS COMP TEST GROUP 分组标记"
         ),
     )
     return GroupResult(
@@ -189,7 +189,7 @@ def aggregate_suites(
             key = (suite, variant)
             items = present.get(key)
             if not items:
-                reason = f"{suite} ({variant}) was not run by the OS"
+                reason = f"{suite}（{variant}）没有被操作系统运行"
                 if script_runs and key in script_runs:
                     run = script_runs[key][0]
                     items = [_script_without_group(suite, variant, run.status)]
@@ -242,12 +242,11 @@ def evaluate_text(
     warnings: list[str] = list(parsed.warnings)
     if not parsed.groups:
         warnings.append(
-            "no '#### OS COMP TEST GROUP START ... ####' markers were found"
+            "没有找到任何 '#### OS COMP TEST GROUP START ... ####' 分组标记"
         )
     if timed_out:
         warnings.append(
-            f"QEMU was killed after the timeout; groups without END markers are "
-            "not counted"
+            f"QEMU 在超时后被强制结束；没有 END 标记的分组不计分"
         )
 
     # Build and score one GroupResult per captured group.
@@ -258,8 +257,8 @@ def evaluate_text(
         score_group(group, judge_dir, scoped, score_mode=score_mode)
         if not group.complete:
             group.warnings.append(
-                "group is incomplete (no END marker); partial score is shown but "
-                "the online harness would not count it"
+                "分组不完整（缺少 END 标记）；这里显示的是部分得分，"
+                "线上评测不会计入"
             )
         groups.append(group)
 
@@ -276,7 +275,7 @@ def evaluate_text(
         status = runs[-1].status if runs else None
         groups.append(_script_without_group(suite, variant, status))
         warnings.append(
-            f"{suite} ({variant}) script ran but produced no test group marker"
+            f"{suite}（{variant}）的测试脚本运行了，但没有输出分组标记"
         )
 
     observed_variants = sorted({g.variant for g in groups})
@@ -295,8 +294,8 @@ def evaluate_text(
         )
         if group.duration_sec >= limit * 0.8:
             group.warnings.append(
-                f"script took {group.duration_sec:.1f}s, close to the guest "
-                f"{limit:g}s per-test timeout"
+                f"脚本耗时 {group.duration_sec:.1f}s，已经接近 guest 的 "
+                f"{limit:g}s 单项超时"
             )
 
     # Keep the full script table for the report.

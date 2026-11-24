@@ -49,7 +49,7 @@ def score_libcbench(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=1.0,
                 status=STATUS_FULL,
                 kind="performance",
-                note=f"time={time_s:.6f}s virt={virt} res={res} dirty={dirty}",
+                note=f"耗时={time_s:.6f}s 虚拟={virt}KB 常驻={res}KB 脏页={dirty}KB",
                 extra={
                     "time_sec": time_s,
                     "virt_kb": virt,
@@ -87,7 +87,7 @@ def score_libcbench(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=1.0,
                 status=STATUS_FAIL,
                 kind="performance",
-                note="benchmark header found but no time line",
+                note="找到了基准标题，但没有 time 行",
             )
         )
 
@@ -99,13 +99,13 @@ def score_libcbench(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=float(EXPECTED_COUNT - len(points)),
                 status=STATUS_FAIL,
                 kind="performance",
-                note=f"expected {EXPECTED_COUNT} benchmarks, parsed {len(points)}",
+                note=f"预期 {EXPECTED_COUNT} 项基准，只解析到 {len(points)} 项",
             )
         )
     elif len(points) > EXPECTED_COUNT:
         # New libc-bench revision: keep the result but do not inflate the max.
         group.warnings.append(
-            f"libcbench printed {len(points)} benchmarks, expected {EXPECTED_COUNT}"
+            f"libcbench 输出了 {len(points)} 项基准，预期 {EXPECTED_COUNT} 项"
         )
 
     group.points.extend(points)
@@ -114,5 +114,5 @@ def score_libcbench(group: GroupResult, baseline: dict[str, float]) -> None:
     missing = [name for name in LIBCBENCH_EXPECTED if name not in seen_base]
     if missing:
         group.warnings.append(
-            "libcbench did not print: " + ", ".join(sorted(set(missing)))
+            "libcbench 没有输出：" + "、".join(sorted(set(missing)))
         )

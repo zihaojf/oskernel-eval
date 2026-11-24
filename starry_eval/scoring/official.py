@@ -86,7 +86,7 @@ def _parse_json_output(stdout: str) -> list[dict[str, Any]]:
 
     text = stdout.strip()
     if not text:
-        raise JudgeError("judge produced no output")
+        raise JudgeError("judge 没有任何输出")
     try:
         data = json.loads(text)
         if isinstance(data, list):
@@ -104,7 +104,7 @@ def _parse_json_output(stdout: str) -> list[dict[str, Any]]:
             continue
         if isinstance(data, list):
             return data
-    raise JudgeError("judge output is not a JSON array")
+    raise JudgeError("judge 的输出不是 JSON 数组")
 
 
 def _run_raw_judge(path: Path, body: str) -> list[dict[str, Any]]:
@@ -118,10 +118,10 @@ def _run_raw_judge(path: Path, body: str) -> list[dict[str, Any]]:
             check=False,
         )
     except subprocess.TimeoutExpired as exc:
-        raise JudgeError(f"{path.name} timed out") from exc
+        raise JudgeError(f"{path.name} 执行超时") from exc
     if proc.returncode != 0:
         raise JudgeError(
-            f"{path.name} exited with {proc.returncode}: "
+            f"{path.name} 退出码 {proc.returncode}："
             f"{proc.stderr.strip()[:300]}"
         )
     return _parse_json_output(proc.stdout)
@@ -165,7 +165,7 @@ def _points_from_items(suite: str, items: list[dict[str, Any]]) -> list[TestPoin
                 max_score=max_score,
                 status=status,
                 kind=KIND_PERFORMANCE,
-                note=f"result={item.get('result')} baseline={item.get('baseline')}",
+                note=f"实测={item.get('result')} 基线={item.get('baseline')}",
                 extra={
                     "result": item.get("result"),
                     "baseline": item.get("baseline"),
@@ -214,6 +214,76 @@ def _points_from_items(suite: str, items: list[dict[str, Any]]) -> list[TestPoin
 # ---------------------------------------------------------------------------
 
 _module_cache: dict[str, Any] = {}
+
+_ASSERT_LABELS = {
+    "=": "应等于",
+    "!=": "应不等于",
+    ">": "应大于",
+    ">=": "应不小于",
+}
+
+
+def _short_arg(value: Any, limit: int = 60) -> str:
+    """把断言参数压成一行可读文本（输出行列表只报行数）。"""
+
+    if isinstance(value, list):
+        text = f"[{len(value)} 行输出]"
+    elif isinstance(value, tuple):
+        text = "(" + ", ".join(_short_arg(item, 30) for item in value) + ")"
+    else:
+        text = str(value)
+    text = " ".join(text.split())
+    if len(text) > limit:
+        text = text[: limit - 1] + "…"
+    return text
+
+
+def _describe_assertion(entry: dict[str, Any]) -> str:
+    """把 judge 的一条断言结果写成一句中文线索。"""
+
+    rep = str(entry.get("rep") or "?")
+    args = entry.get("arg") or ()
+    if not isinstance(args, tuple):
+        args = (args,)
+    if rep in ("in", "in_str") and len(args) >= 2:
+        return f"输出中没有匹配 {_short_arg(args[0])}"
+    label = _ASSERT_LABELS.get(rep)
+    if label and len(args) >= 2:
+        return f"实际 {_short_arg(args[0])} {label} {_short_arg(args[1])}"
+    return "断言失败：" + ", ".join(_short_arg(item) for item in args)
+
+
+def _attach_failed_assertions(
+    points: list[TestPoint], instances: list[Any]
+) -> None:
+    """judge_basic 的 JSON 里丢掉了 ``results``，这里直接读实例拿断言。"""
+
+    for instance in instances:
+        failed = [item for item in instance.result if not item.get("res")]
+        if not failed:
+            continue
+        texts = [_describe_assertion(item) for item in failed[:3]]
+        for point in points:
+            if point.name == instance.name:
+                point.extra["failed_assertions"] = texts
+                break
+
+
+def _copy_failed_assertions(
+    *groups: list[TestPoint] | None,
+) -> None:
+    """raw 口径的测试点也带上断言线索（两份列表名字相同）。"""
+
+    detail: dict[str, list[str]] = {}
+    for group in groups:
+        for point in group or []:
+            texts = point.extra.get("failed_assertions")
+            if texts and point.name not in detail:
+                detail[point.name] = list(texts)
+    for group in groups:
+        for point in group or []:
+            if "failed_assertions" not in point.extra and point.name in detail:
+                point.extra["failed_assertions"] = detail[point.name]
 
 
 def _load_basic_module(path: Path):
@@ -274,7 +344,9 @@ def _score_basic_intended(path: Path, body: str) -> list[TestPoint]:
             data.append(line)
 
     results = [instance.get_result() for instance in instances]
-    return _points_from_items("basic", results)
+    points = _points_from_items("basic", results)
+    _attach_failed_assertions(points, instances)
+    return points
 
 
 # ---------------------------------------------------------------------------
@@ -311,7 +383,7 @@ def score_official(
         try:
             intended_points = _score_basic_intended(path, body)
         except Exception as exc:  # pragma: no cover - defensive
-            warnings.append(f"intended basic scoring failed: {exc}")
+            warnings.append(f"basic 的修正换行评分失败：{exc}")
 
     if mode == "raw" or intended_points is None:
         points = raw_points
@@ -327,9 +399,10 @@ def score_official(
         alternate = raw_points
         source = "official-intended"
         warnings.append(
-            "primary score is newline-normalized; verbatim judge score is the "
-            "alternate value"
+            "主分口径是修正换行后的结果；逐字口径的 judge 得分作为备选值显示"
         )
+
+    _copy_failed_assertions(points, alternate)
 
     metrics: list[Metric] = []
     if suite == "iozone":

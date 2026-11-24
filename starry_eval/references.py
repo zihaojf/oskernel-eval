@@ -53,7 +53,7 @@ SUITE_ORDER = (
 SUITE_SPECS: dict[str, SuiteSpec] = {
     "basic": SuiteSpec(
         name="basic",
-        title="basic syscalls",
+        title="basic 系统调用",
         mode=MODE_OFFICIAL,
         kind="functional",
         default_max=102,
@@ -62,7 +62,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "busybox": SuiteSpec(
         name="busybox",
-        title="busybox",
+        title="busybox 命令集",
         mode=MODE_OFFICIAL,
         kind="functional",
         default_max=55,
@@ -71,7 +71,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "lua": SuiteSpec(
         name="lua",
-        title="lua interpreter",
+        title="lua 解释器",
         mode=MODE_OFFICIAL,
         kind="functional",
         default_max=9,
@@ -80,7 +80,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "libctest": SuiteSpec(
         name="libctest",
-        title="libc-test",
+        title="libc-test 测试集",
         mode=MODE_OFFICIAL,
         kind="functional",
         default_max=220,
@@ -89,7 +89,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "iozone": SuiteSpec(
         name="iozone",
-        title="iozone",
+        title="iozone 文件 I/O 吞吐",
         mode=MODE_OFFICIAL,
         kind="performance",
         default_max=40,
@@ -99,7 +99,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "unixbench": SuiteSpec(
         name="unixbench",
-        title="UnixBench",
+        title="UnixBench 综合性能",
         mode=MODE_COVERAGE,
         kind="performance",
         default_max=27,
@@ -108,7 +108,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "iperf": SuiteSpec(
         name="iperf",
-        title="iperf3",
+        title="iperf3 网络吞吐",
         mode=MODE_SUCCESS,
         kind="mixed",
         default_max=6,
@@ -117,7 +117,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "libcbench": SuiteSpec(
         name="libcbench",
-        title="libc-bench",
+        title="libc-bench 库函数性能",
         mode=MODE_COVERAGE,
         kind="performance",
         default_max=27,
@@ -126,7 +126,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "lmbench": SuiteSpec(
         name="lmbench",
-        title="lmbench",
+        title="lmbench 微基准",
         mode=MODE_RANGE,
         kind="performance",
         default_max=24,
@@ -135,7 +135,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "netperf": SuiteSpec(
         name="netperf",
-        title="netperf",
+        title="netperf 网络事务",
         mode=MODE_SUCCESS,
         kind="mixed",
         default_max=5,
@@ -144,7 +144,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "cyclictest": SuiteSpec(
         name="cyclictest",
-        title="cyclictest + hackbench",
+        title="cyclictest 实时延迟 + hackbench",
         mode=MODE_SUCCESS,
         kind="mixed",
         default_max=4,
@@ -153,7 +153,7 @@ SUITE_SPECS: dict[str, SuiteSpec] = {
     ),
     "ltp": SuiteSpec(
         name="ltp",
-        title="Linux Test Project",
+        title="Linux Test Project（ltp）",
         mode=MODE_PASSRATE,
         kind="functional",
         default_max=None,

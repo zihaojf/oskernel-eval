@@ -55,7 +55,7 @@ def score_unixbench(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=float(len(missing)),
                 status=STATUS_FAIL,
                 kind="performance",
-                note="missing: " + ", ".join(missing),
+                note="缺少：" + "、".join(missing),
             )
         )
 
@@ -65,10 +65,11 @@ def score_unixbench(group: GroupResult, baseline: dict[str, float]) -> None:
     # Sanity checks that are useful when the shell pipeline in
     # unixbench_testcode.sh fails (e.g. awk/grep missing).
     if not points:
-        group.warnings.append("UnixBench printed no 'Unixbench ... test(...)' lines")
+        group.warnings.append("UnixBench 没有输出任何 'Unixbench ... test(...)' 行")
     for name, point in zip(seen, points):
         expected_unit = UNIXBENCH_UNITS.get(name)
         if expected_unit and point.extra.get("unit") != expected_unit:
             group.warnings.append(
-                f"unixbench {name}: unit {point.extra.get('unit')!r} != {expected_unit!r}"
+                f"unixbench {name}：单位 {point.extra.get('unit')!r} "
+                f"与预期的 {expected_unit!r} 不一致"
             )

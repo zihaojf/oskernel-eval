@@ -154,7 +154,7 @@ class NetperfTest(unittest.TestCase):
         self.assertEqual(metrics["netperf/TCP_STREAM throughput"], 45.22)
         self.assertEqual(metrics["netperf/TCP_RR trans_rate"], 2145.21)
         self.assertTrue(
-            any("receiver throughput" in w for w in group.warnings),
+            any("接收端吞吐" in w for w in group.warnings),
             group.warnings,
         )
 
@@ -194,8 +194,8 @@ class IperfTest(unittest.TestCase):
         self.assertAlmostEqual(metrics["iperf/BASIC_UDP receiver"], 3.52)
         self.assertAlmostEqual(metrics["iperf/BASIC_UDP udp_loss"], 97.0)
         self.assertGreater(metrics["iperf/BASIC_TCP tcp_retrans"], 1e8)
-        self.assertTrue(any("UDP loss" in w for w in group.warnings))
-        self.assertTrue(any("retransmit counter" in w for w in group.warnings))
+        self.assertTrue(any("丢包" in w for w in group.warnings))
+        self.assertTrue(any("重传计数" in w for w in group.warnings))
 
 
 CYCLICTEST_BODY = """====== cyclictest NO_STRESS_P1 begin ======
@@ -222,7 +222,7 @@ class CyclictestTest(unittest.TestCase):
         self.assertEqual(group.points[0].score, 1.0)
         self.assertEqual(group.points[2].score, 0.0)
         self.assertEqual(group.score, 2.0)
-        self.assertTrue(any("discarded" in w for w in group.warnings))
+        self.assertTrue(any("作废" in w for w in group.warnings))
 
 
 LIBCBENCH_BODY = """

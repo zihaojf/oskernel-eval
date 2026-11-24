@@ -183,38 +183,39 @@ runs/<时间戳>-<arch>/
 > “suite → 文档 → 评分方式 → 满分”的速查表。
 > 报告里看到 `basic-glibc / test_mount 0/5`，就去 `docs/basic/basic.md` 查那个点。
 
-以一次完整的 RISC-V 运行为例：
+报告正文（`report.txt` / `report.md`）全部是中文；`report.json` 的**键**保持
+英文，方便脚本继续消费。以一次完整的 RISC-V 运行为例：
 
 ```text
-Totals
-official judge (verbatim): 665.3 / 852  (78.1%)
-official judge (intended): 737.3 / 852  (86.5%)
-local composite      : 861.3 / 1038  (83.0%)
-test points          : 737 full, 0 partial, 69 fail, 0 skip
-groups               : 20/20 complete
+总分
+官方 judge（逐字）   : 665.3 / 852  (78.1%)
+官方 judge（修正换行）: 737.3 / 852  (86.5%)
+本地综合分           : 861.3 / 1038  (83.0%)
+测试点               : 737 通过，0 部分，69 失败，0 跳过
+分组                 : 20/20 完整
 ```
 
 - **official**：5 个有官方 judge 的 suite 之和；`/852` 是 2 个 libc 变体的
   `(102+55+9+220+40)`。
 - **composite**：再加 unixbench/iperf/libcbench/lmbench/netperf/cyclictest
   的本地分；`/1038` 是 `2 × (102+55+9+220+40+27+6+27+24+5+4)`。
-- **test points**：`full` 表示该测试点满分，`partial` 表示只拿到部分断言，
-  `fail` 表示 0 分；未运行的 suite 不计入这个计数，而是在下一节单独列出。
-- **groups**：串口里实际出现且完整闭合的 group 数。
+- **测试点**：`通过` 表示该测试点满分，`部分` 表示只拿到部分断言，`失败` 表示
+  0 分；未运行的 suite 不计入这个计数，而是在下一节单独列出。
+- **分组**：串口里实际出现且完整闭合的 group 数。
 
 ### 4.1 Suite scores
 
 ```text
-suite                var          score   points f/p/f     time  status       delta
-basic                glibc     92/102     30/  0/2       2.4s  ok
+套件                 变体                  得分/满分        全/半/失       用时  状态
+basic              glibc        92/102         30/  0/2       2.4s  正常
 ...
-libctest             glibc    172/220    172/  0/48     54.0s  ok
+libctest           glibc       172/220        172/  0/48     54.0s  正常
 ```
 
-- `score/max` 是计入总分的值；未完成 group 的 `raw` 分会以
-  `note: ... partial raw score ... (not counted)` 单独显示。
-- `delta` 是相对**上一次完整运行**的同 suite 变化；没有可比的完整历史时为空。
-- `basic` 的 verbatim/intended 差异会以 `note:` 行列出。
+- `得分/满分` 是计入总分的值；未完成 group 的原始分会以
+  `注：... 只跑出一部分原始分 ...（未计入总分）` 单独显示。
+- `变化` 是相对**上一次完整运行**的同 suite 变化；没有可比的完整历史时为空。
+- `basic` 的逐字/修正换行差异会以 `注：` 行列出。
 
 ### 4.2 Not run / incomplete
 
@@ -226,39 +227,66 @@ libctest             glibc    172/220    172/  0/48     54.0s  ok
 按 suite 汇总失分，直接告诉你“先修哪里收益最大”。例如 RISC-V 的结果：
 
 ```text
-libctest-glibc           lost    48.0 across 48 test point(s)
-iozone-musl              lost    19.9 across 20 test point(s)
-iozone-glibc             lost    19.8 across 20 test point(s)
-basic-glibc              lost    10.0 across 2 test point(s)
-basic-musl               lost    10.0 across 2 test point(s)
-libctest-musl            lost     3.0 across 3 test point(s)
-unixbench-glibc          lost     3.0 across 1 test point(s)
+  libctest-glibc           失    48.0 分，涉及 48 个测试点
+  iozone-musl              失    19.9 分，涉及 20 个测试点
+  iozone-glibc             失    19.8 分，涉及 20 个测试点
+  basic-glibc              失    10.0 分，涉及 2 个测试点
+  basic-musl               失    10.0 分，涉及 2 个测试点
+  libctest-musl            失     3.0 分，涉及 3 个测试点
+  unixbench-glibc          失     3.0 分，涉及 1 个测试点
 ...
 ```
 
-### 4.4 Warnings
+### 4.4 分组明细（组内每个测试点）
 
-- `iperf ... UDP loss 97%`：UDP 发送端有数据，接收端只收到 3%，说明网络栈/
+一个分组拿了 `92/102`，只看套件那一行并不知道差在哪。`report.md` / `report.txt`
+的 **分组明细** 一节把每个已运行的分组拆到测试点级别，先把所有没满分（以及被判
+失败）的测试点列出来，并附上从串口输出里切出来的证据：
+
+```text
+分组明细（未满分的测试点）
+[basic-glibc] basic 系统调用  92/102  失 10  测试点 32 （通过 30 / 部分 0 / 失败 2 / 跳过 0）
+   1. test_mount                      0/5     通过 0/5     失败
+      证据：mount return: -19 | --- Assert Fatal ! ---
+      （没有 END 标记：输出被下一段截断）
+   2. test_umount                     0/5     通过 0/5     失败
+      证据：mount return: -19 | 断言：实际 2 应不小于 4
+```
+
+- 证据行优先挑失败线索（`fail` / `error` / `assert` / `return: -` 等）；一条都没有
+  时退回该段落的最后两行。
+- 「没有 END 标记：输出被下一段截断」表示这个测试点跑到一半就跳到下一个了——
+  这也是 basic 的 mount/umount 掉 20 分的直接原因。
+- `basic` 还会给出 judge 的断言级线索（`实际 2 应不小于 4`）：`judge_basic.py`
+  的 JSON 把 `results` 丢掉了，所以这里直接驱动 judge 类把断言结果取回来。
+- Markdown 里全部通过的测试点折叠进 `<details>`，不会把报告撑爆。
+- 机器可读版本在 `report.json` 的 `summary.group_details`：每个分组带
+  `score / max_score / lost / points`，每个测试点带 `status / status_label /
+  passed / total / evidence / evidence_truncated / failed_assertions`。
+
+### 4.5 警告（Warnings）
+
+- `iperf BASIC_UDP：UDP 丢包 97%`：发送端有数据，接收端只收到 3%，说明网络栈/
   缓冲区有问题（但 iperf 退出码仍是 0，所以 case 分仍拿满）。
-- `iperf ... suspicious TCP retransmit counter 774909488`：TCP 重传计数异常，
-  几乎可以断定是计数器/协议栈 bug。
-- `cyclictest ... max latency 10140 us`：QEMU 下 100 Hz tick 的典型值；
-  文档样例是 1–50 us。`STRESS ... discarded` 表示 hackbench 没能正常 kill。
-- `netperf setsockopt(SO_DONTROUTE/SO_ENOBUFS) is not supported`：测试仍能跑，
-  但 setup 降级；`netperf UDP_STREAM receiver ...% of sender` 表示大量丢包。
+- `iperf BASIC_TCP：TCP 重传计数异常（774909488）`：几乎可以断定是计数器/
+  协议栈 bug。
+- `cyclictest NO_STRESS_P1：最大延迟 10140 us 过高`：QEMU 下 100 Hz tick 的典型
+  值，文档样例是 1–50 us；`STRESS 结果作废` 表示 hackbench 没能正常 kill。
+- `netperf 不支持 setsockopt(SO_DONTROUTE/SO_ENOBUFS)`：测试仍能跑，但环境降级；
+  `接收端吞吐只有发送端的 ...%` 表示大量丢包。
 - `unixbench/missing-benchmarks`：通常是 `looper ./multi.sh` 相关命令失败。
 
-### 4.5 Performance
+### 4.6 性能指标（Performance）
 
 每个 suite 一行一个指标，按“最差优先”排序：
 
 ```text
-[iperf-glibc] 18 metrics
-  iperf/BASIC_TCP tcp_retrans   774909488 count   quality=0.00 expected 0-1000000
-  iperf/BASIC_UDP udp_loss      97 %              quality=0.03 expected 0-100 %
+[iperf-glibc] 18 项指标
+  iperf/BASIC_TCP tcp_retrans   774909488 count   质量=0.00 期望 0-1000000
+  iperf/BASIC_UDP udp_loss      97 %              质量=0.03 期望 0-100 %
   ...
-[libcbench-glibc] 27 metrics
-  libcbench/b_pthread_create_serial1(0)  1.094 s  quality=1.00 delta=+0.0%
+[libcbench-glibc] 27 项指标
+  libcbench/b_pthread_create_serial1(0)  1.094 s  质量=1.00 变化=+0.0%
 ```
 
 `quality`：

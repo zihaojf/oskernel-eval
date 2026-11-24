@@ -39,7 +39,7 @@ def build_kernel(arch: str, starry_dir: Path) -> None:
     )
     if proc.returncode != 0:
         raise BuildError(
-            f"make {spec.build_target} failed with exit code {proc.returncode}"
+            f"make {spec.build_target} 失败，退出码 {proc.returncode}"
         )
 
 
@@ -69,7 +69,7 @@ def _baseline_for(
 ) -> tuple[dict[str, float], str]:
     if baseline_file is not None:
         data = load_baseline(baseline_file)
-        return data, str(baseline_file) if data else "empty baseline file"
+        return data, str(baseline_file) if data else "基线文件是空的"
 
     data = load_baseline(paths.baseline_file)
     if data:
@@ -78,9 +78,9 @@ def _baseline_for(
     if use_previous:
         previous_report, path = _load_previous_report(store, arch, run_dir)
         if previous_report is not None and path is not None:
-            return metrics_from_report(previous_report), f"previous run: {path.parent.name}"
+            return metrics_from_report(previous_report), f"上一次运行：{path.parent.name}"
 
-    return {}, "none"
+    return {}, "无"
 
 
 def run_one(
@@ -122,7 +122,7 @@ def run_one(
         use_previous=use_previous_baseline,
     )
 
-    print(f"==> booting {arch} ({spec.label})")
+    print(f"==> 启动 {arch}（{spec.label}）")
     output = run_qemu(
         arch,
         kernel,
@@ -149,7 +149,7 @@ def run_one(
         log_path=str(log_path),
         script_times=output.script_times,
     )
-    result.warnings.append(f"baseline source: {baseline_source}")
+    result.warnings.append(f"基线来源：{baseline_source}")
 
     report = build_report(result, run_dir, previous=previous_report)
     write_reports(report, run_dir)
@@ -160,7 +160,7 @@ def run_one(
         existing = load_baseline(paths.baseline_file)
         existing.update(metrics)
         save_baseline(paths.baseline_file, existing)
-        print(f"==> baseline updated: {paths.baseline_file} ({len(metrics)} metrics)")
+        print(f"==> 基线已更新：{paths.baseline_file}（{len(metrics)} 项指标）")
 
     return report, run_dir
 
@@ -211,7 +211,7 @@ def score_one(
         exit_code=None,
         log_path=str(serial_path),
     )
-    result.warnings.append(f"baseline source: {baseline_source}")
+    result.warnings.append(f"基线来源：{baseline_source}")
 
     report = build_report(result, run_dir, previous=previous_report)
     write_reports(report, run_dir)
@@ -222,6 +222,6 @@ def score_one(
         existing = load_baseline(paths.baseline_file)
         existing.update(metrics)
         save_baseline(paths.baseline_file, existing)
-        print(f"==> baseline updated: {paths.baseline_file} ({len(metrics)} metrics)")
+        print(f"==> 基线已更新：{paths.baseline_file}（{len(metrics)} 项指标）")
 
     return report, run_dir

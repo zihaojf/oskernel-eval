@@ -60,16 +60,15 @@ def check_environment(arch: str, kernel: Path, image: Path) -> None:
     spec = ARCH_SPECS[arch]
     if shutil.which(spec.qemu) is None:
         raise RunnerError(
-            f"{spec.qemu} not found in PATH; install QEMU or run inside the "
-            "competition Docker image"
+            f"PATH 里找不到 {spec.qemu}；请安装 QEMU，或在比赛用的 Docker 镜像里运行"
         )
     if not kernel.is_file():
         raise RunnerError(
-            f"kernel not found: {kernel}\n"
-            f"build it first (make {spec.build_target}) or pass --starry-dir"
+            f"找不到内核：{kernel}\n"
+            f"请先编译（make {spec.build_target}），或用 --starry-dir 指定目录"
         )
     if not image.is_file():
-        raise RunnerError(f"disk image not found: {image}")
+        raise RunnerError(f"找不到磁盘镜像：{image}")
 
 
 def _live_enabled(default: bool = True) -> bool:
@@ -137,8 +136,8 @@ def run_qemu(
         if verbose:
             print("+ " + " ".join(command))
         print(
-            f"==> serial log: {log_path}  (live: {'on' if live else 'off'}, "
-            "STARRY_EVAL_LIVE=0 silences)",
+            f"==> 串口日志：{log_path}（实时回显：{'开' if live else '关'}，"
+            "STARRY_EVAL_LIVE=0 可关闭）",
             flush=True,
         )
         proc = subprocess.Popen(

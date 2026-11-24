@@ -159,7 +159,7 @@ def score_lmbench(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=1.0,
                 status=status,
                 kind="performance",
-                note=f"{value:g} {unit} (expected {spec.low:g}-{spec.high:g} {spec.unit})",
+                note=f"{value:g} {unit}（期望 {spec.low:g}-{spec.high:g} {spec.unit}）",
                 extra={
                     "key": spec.key,
                     "value": value,
@@ -190,11 +190,11 @@ def score_lmbench(group: GroupResult, baseline: dict[str, float]) -> None:
                 max_score=float(len(missing)),
                 status=STATUS_FAIL,
                 kind="performance",
-                note="missing: " + "; ".join(missing),
+                note="缺少：" + "；".join(missing),
             )
         )
         group.warnings.append(
-            f"lmbench: {len(missing)} of {len(LMBENCH_SPECS)} metrics missing"
+            f"lmbench：{len(missing)}/{len(LMBENCH_SPECS)} 项指标缺失"
         )
 
     group.points.extend(points)

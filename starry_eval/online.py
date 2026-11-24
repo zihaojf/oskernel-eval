@@ -82,7 +82,7 @@ def build_comparison(
         report = reports.get(arch)
         if report is None:
             environments[env] = {
-                "error": f"no local report for architecture {arch}",
+                "error": f"没有 {arch} 架构的本地报告",
                 "local_total": None,
                 "online_total": None,
                 "rows": {},
@@ -175,19 +175,19 @@ def _fmt_cell(row: dict[str, Any]) -> str:
 def render_text(comparison: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.append("=" * 92)
-    lines.append("Online vs local comparison")
+    lines.append("线上 / 本地对比")
     lines.append("=" * 92)
-    lines.append(f"online source: {comparison.get('source') or '-'}")
+    lines.append(f"线上数据来源：{comparison.get('source') or '-'}")
     for arch, path in comparison.get("local_reports", {}).items():
-        lines.append(f"local {arch}: {path}")
+        lines.append(f"本地 {arch}：{path}")
     lines.append(
-        "cells: local/online/delta  ('-' = not scored by online, 'n.a.' = not run locally)"
+        "单元格：本地/线上/差值（'-' = 线上不计分，'n.a.' = 本地没跑）"
     )
     lines.append("")
 
-    lines.append("Per-environment totals (aligned to the online suite set)")
+    lines.append("各环境总分（对齐线上的套件集合）")
     lines.append("-" * 92)
-    lines.append(f"{'environment':<14} {'local':>10} {'online':>10} {'delta':>10}")
+    lines.append(f"{'环境':<14} {'本地':>10} {'线上':>10} {'差值':>10}")
     for env, data in comparison["environments"].items():
         if data.get("error"):
             lines.append(f"{env:<14} {data['error']}")
@@ -200,15 +200,15 @@ def render_text(comparison: dict[str, Any]) -> str:
     totals = comparison["totals"]
     lines.append("-" * 92)
     lines.append(
-        f"{'TOTAL':<14} {_fmt(totals['local']):>10} "
+        f"{'合计':<14} {_fmt(totals['local']):>10} "
         f"{_fmt(totals['online']):>10} {_fmt_signed(totals['delta']):>10}"
     )
     lines.append("")
 
     env_names = list(comparison["environments"].keys())
-    lines.append("Suite detail")
+    lines.append("各套件对比")
     lines.append("-" * 92)
-    header = f"{'suite':<12}" + "".join(f"{env:<20}" for env in env_names)
+    header = f"{'套件':<12}" + "".join(f"{env:<20}" for env in env_names)
     lines.append(header)
     for suite in ONLINE_SUITE_ORDER:
         cells: list[str] = []
@@ -230,40 +230,40 @@ def render_text(comparison: dict[str, Any]) -> str:
         for suite, score in data.get("local_extra", {}).items():
             extras.append(f"{env}: {suite} = {_fmt(score)}")
     if extras:
-        lines.append("Local-only suites (not in the online table, excluded above)")
+        lines.append("只有本地有的套件（不在线上表里，未计入上面的合计）")
         lines.append("-" * 92)
         for item in extras:
             lines.append(f"  {item}")
         lines.append(
-            f"  total local-only: {_fmt(comparison['totals']['local_extra'])}"
+            f"  本地独有合计：{_fmt(comparison['totals']['local_extra'])}"
         )
         lines.append("")
 
-    lines.append("Why the raw totals differ")
+    lines.append("原始总分为什对不上")
     lines.append("-" * 92)
-    lines.append("  1. unixbench is included in the local composite but absent online.")
-    lines.append("  2. libctest-glibc is '-' online (not scored/captured) but local runs")
-    lines.append("     it (172/174); this alone is a ~346 point difference in a 2-arch sum.")
-    lines.append("  3. libcbench/netperf/cyclictest use different formulae:")
-    lines.append("     local = coverage/success; online = performance/validity scoring.")
-    lines.append("  4. iozone differs only by run-to-run throughput / baseline.")
-    lines.append("  5. online total = 4 environments (glibc/musl x la/rv); a local")
-    lines.append("     report is per architecture, so compare the aligned per-env rows.")
+    lines.append("  1. unixbench 计入了本地综合分，线上没有这个套件。")
+    lines.append("  2. libctest-glibc 线上是 '-'（不计分/没抓到），本地会跑")
+    lines.append("     这一项（172/174）；两架构合计就差了约 346 分。")
+    lines.append("  3. libcbench/netperf/cyclictest 的计分公式不同：")
+    lines.append("     本地 = 覆盖率/成功数；线上 = 性能/有效性打分。")
+    lines.append("  4. iozone 只是每次运行的吞吐/基线不同。")
+    lines.append("  5. 线上总分 = 4 个环境（glibc/musl × la/rv）；本地报告是")
+    lines.append("     按架构分开的，请对比按环境对齐的那些行。")
     return "\n".join(lines) + "\n"
 
 
 def render_markdown(comparison: dict[str, Any]) -> str:
     lines: list[str] = []
-    lines.append("# Online vs local comparison")
+    lines.append("# 线上 / 本地对比")
     lines.append("")
-    lines.append(f"- online source: {comparison.get('source') or '-'}")
+    lines.append(f"- 线上数据来源：{comparison.get('source') or '-'}")
     for arch, path in comparison.get("local_reports", {}).items():
-        lines.append(f"- local {arch}: {path}")
-    lines.append("- cells: `local/online/delta`; `-` = not scored by online")
+        lines.append(f"- 本地 {arch}：{path}")
+    lines.append("- 单元格：`本地/线上/差值`；`-` = 线上不计分")
     lines.append("")
     lines.append("## 每个环境的总分（对齐在线套件集合）")
     lines.append("")
-    lines.append("| environment | local | online | delta |")
+    lines.append("| 环境 | 本地 | 线上 | 差值 |")
     lines.append("|---|---:|---:|---:|")
     for env, data in comparison["environments"].items():
         if data.get("error"):
@@ -275,7 +275,7 @@ def render_markdown(comparison: dict[str, Any]) -> str:
         )
     totals = comparison["totals"]
     lines.append(
-        f"| **TOTAL** | **{_fmt(totals['local'])}** | "
+        f"| **合计** | **{_fmt(totals['local'])}** | "
         f"**{_fmt(totals['online'])}** | **{_fmt(totals['delta'])}** |"
     )
     lines.append("")
@@ -283,7 +283,7 @@ def render_markdown(comparison: dict[str, Any]) -> str:
     env_names = list(comparison["environments"].keys())
     lines.append("## 分项对比")
     lines.append("")
-    lines.append("| suite | " + " | ".join(env_names) + " |")
+    lines.append("| 套件 | " + " | ".join(env_names) + " |")
     lines.append("|---|" + "---|" * len(env_names))
     for suite in ONLINE_SUITE_ORDER:
         cells: list[str] = []
@@ -304,7 +304,7 @@ def render_markdown(comparison: dict[str, Any]) -> str:
         for suite, score in data.get("local_extra", {}).items():
             extras.append(f"{env}: {suite} = {_fmt(score)}")
     if extras:
-        lines.append("## 本地有、在线没有的 suite")
+        lines.append("## 本地有、线上没有的套件")
         lines.append("")
         for item in extras:
             lines.append(f"- {item}")

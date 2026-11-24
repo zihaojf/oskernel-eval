@@ -175,7 +175,7 @@ def parse_serial(text: str, timestamps: list[float] | None = None) -> ParsedLog:
                 open_group = None
             else:
                 parsed.warnings.append(
-                    f"line {index + 1}: END marker for {name!r} without START"
+                    f"第 {index + 1} 行：{name!r} 有 END 标记但没有对应的 START"
                 )
             continue
 
@@ -243,14 +243,14 @@ def parse_serial(text: str, timestamps: list[float] | None = None) -> ParsedLog:
         open_group.body = "\n".join(lines[open_group.start_line :])
         parsed.groups.append(open_group)
         parsed.warnings.append(
-            f"group {open_group.group!r} has no END marker (killed or aborted)"
+            f"分组 {open_group.group!r} 缺少 END 标记（被终止或中途退出）"
         )
 
     if open_script is not None:
         open_script.end_line = len(lines)
         parsed.script_runs.append(open_script)
         parsed.warnings.append(
-            f"script {open_script.path!r} has no finished marker (killed or aborted)"
+            f"脚本 {open_script.path!r} 缺少 finished 标记（被终止或中途退出）"
         )
 
     # Fill durations from line timestamps when available.  The init markers
